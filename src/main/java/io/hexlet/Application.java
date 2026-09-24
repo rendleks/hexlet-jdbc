@@ -3,6 +3,7 @@ package io.hexlet;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.SQLOutput;
+import java.sql.Statement;
 
 public class Application {
 
@@ -18,9 +19,33 @@ public class Application {
                 statement.execute(sql);
             }
 
-            var sql2 = "INSERT INTO users (username, phone) VALUES ('tommy', '123456789'), ('maria', '987654321')";
-            try (var statement2 = conn.createStatement()) {
-                statement2.executeUpdate(sql2);
+            var sql2 = "INSERT INTO users (username, phone) VALUES (?, ?)";
+            try (var preparedStatement = conn.prepareStatement(sql2, Statement.RETURN_GENERATED_KEYS)) {
+                preparedStatement.setString(1, "Sarah");
+                preparedStatement.setString(2, "333333333");
+                preparedStatement.executeUpdate();
+
+                preparedStatement.setString(1, "Tommy");
+                preparedStatement.setString(2, "444444444");
+                preparedStatement.executeUpdate();
+
+                preparedStatement.setString(1, "O'Connor");
+                preparedStatement.setString(2, "555555555");
+                preparedStatement.executeUpdate();
+
+                try (var generatedKeys = preparedStatement.getGeneratedKeys()) {
+                    while (generatedKeys.next()) {
+                        System.out.println(
+                                generatedKeys.getInt(1)
+                        );
+
+                        var sqlDelete = "DELETE FROM users WHERE username = ?";
+                        try (var statementDelite = conn.prepareStatement(sqlDelete, Statement.RETURN_GENERATED_KEYS)) {
+                            statementDelite.setString(1, "O'Connor");
+                            statementDelite.executeUpdate();
+                        }
+                    }
+                }
             }
 
             var sql3 = "SELECT * FROM users ORDER BY id";
